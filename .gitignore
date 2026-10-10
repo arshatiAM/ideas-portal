@@ -1,0 +1,26 @@
+# secrets: never commit these
+.env
+.env.local
+*.env
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# node / next
+node_modules/
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# os / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.env.example
+worker/venv/
+venv/

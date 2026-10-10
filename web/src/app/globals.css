@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    overflow-x: hidden;
+  }
+  body {
+    @apply bg-sand text-ink antialiased;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans Arabic", sans-serif;
+  }
+  h1, h2, h3 {
+    font-family: Georgia, "Times New Roman", "Noto Naskh Arabic", serif;
+    @apply tracking-tight;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition
+           focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-brand text-white hover:bg-brand-dark;
+  }
+  .btn-secondary {
+    @apply btn border border-line bg-white text-ink hover:bg-brand-soft;
+  }
+  .btn-danger {
+    @apply btn bg-red-700 text-white hover:bg-red-800;
+  }
+  .card {
+    @apply rounded-2xl border border-line bg-white p-4 shadow-sm sm:p-6;
+  }
+  .input {
+    @apply w-full rounded-lg border border-line bg-white px-3 py-2.5 text-base text-ink sm:text-sm placeholder:text-ink/40
+           focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20;
+  }
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-ink;
+  }
+  .hint {
+    @apply mt-1 text-xs text-ink/60;
+  }
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold;
+  }
+}
+
+/* Logo: the bulb "switches on" once when the page loads. */
+@keyframes ip-on {
+  0% { opacity: 0.25; }
+  60% { opacity: 1; }
+  100% { opacity: 1; }
+}
+.ip-logo .ip-rays,
+.ip-logo .ip-glow,
+.ip-logo .ip-filament {
+  animation: ip-on 1.1s ease-out 0.15s both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ip-logo .ip-rays,
+  .ip-logo .ip-glow,
+  .ip-logo .ip-filament {
+    animation: none;
+  }
+}
