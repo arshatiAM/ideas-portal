@@ -66,12 +66,13 @@ export default function LeaderboardPage() {
       ) : (
         <ol className="mt-6 space-y-3">
           {entries.map((e) => (
-            <li key={e.reference_id} className="card flex items-center gap-4 !p-4">
+            <li key={e.reference_id} className={`card flex items-center gap-4 ${e.rank === 1 ? "!p-6 border-accent" : "!p-4"}`}>
               <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-lg font-bold ${e.rank <= 3 ? "bg-accent text-white" : "bg-brand-soft text-brand-dark"}`}>
                 {e.rank}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold">{e.title}</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-accent">{e.rank === 1 ? "Winner" : "Finalist"}</p>
+                <p className={`truncate font-semibold ${e.rank === 1 ? "text-xl" : ""}`}>{e.title}</p>
                 <p className="text-xs text-ink/60">{e.first_name}{e.country ? `, ${e.country}` : ""} · <span className="font-mono">{e.reference_id}</span></p>
               </div>
               <div className="w-28 text-end">

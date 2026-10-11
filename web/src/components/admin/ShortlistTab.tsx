@@ -18,6 +18,7 @@ export function ShortlistTab({ challenge, onChallengeChanged }: { challenge: Cha
   const [scores, setScores] = useState<Record<string, number>>({});
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [confirming, setConfirming] = useState<"build" | "publish" | null>(null);
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -51,6 +52,22 @@ export function ShortlistTab({ challenge, onChallengeChanged }: { challenge: Cha
     onChallengeChanged();
   }
 
+  async function verifyAll() {
+    if (!rows) return;
+    const pending = rows.filter((r) => !r.eligibility_verified);
+    if (!pending.length) return;
+    setBusy(true);
+    setMsg(null);
+    const results = await Promise.all(
+      pending.map((r) => supabase.rpc("admin_verify_eligibility", { p_ranking_id: r.id, p_verified: true })),
+    );
+    setBusy(false);
+    const failed = results.find((r) => r.error);
+    if (failed?.error) return setMsg({ ok: false, text: failed.error.message });
+    setMsg({ ok: true, text: `Eligibility verified for ${pending.length} finalist${pending.length === 1 ? "" : "s"}.` });
+    await load();
+  }
+
   const published = challenge.status === "published" || rows?.some((r) => r.status === "published");
   const allVerified = !!rows && rows.length > 0 && rows.every((r) => r.eligibility_verified);
 
@@ -65,30 +82,45 @@ export function ShortlistTab({ challenge, onChallengeChanged }: { challenge: Cha
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <button
-          className="btn-secondary"
-          disabled={busy || !!published}
-          onClick={() => {
-            if (confirm("Build (or rebuild) the Top 10 shortlist from current scores?")) {
-              run(() => supabase.rpc("admin_build_shortlist", { p_challenge_id: challenge.id, p_size: 10 }), "Shortlist built.");
-            }
-          }}
-        >
+        <button className="btn-secondary" disabled={busy || !!published} onClick={() => setConfirming("build")}>
           Build Top 10 shortlist
+        </button>
+        <button className="btn-secondary" disabled={busy || !!published || !rows?.length || allVerified} onClick={verifyAll}>
+          Verify all finalists
         </button>
         <button
           className="btn-primary"
           disabled={busy || !!published || !allVerified}
           title={allVerified ? "" : "Verify every finalist first"}
-          onClick={() => {
-            if (confirm("Publish these winners? This makes the leaderboard public and cannot be undone.")) {
-              run(() => supabase.rpc("admin_publish_winners", { p_challenge_id: challenge.id }), "Winners published.");
-            }
-          }}
+          onClick={() => setConfirming("publish")}
         >
           Publish winners
         </button>
       </div>
+
+      {confirming && (
+        <div role="alertdialog" aria-label="Confirm" className="card flex flex-wrap items-center justify-between gap-3 border-brand bg-brand-soft/40 text-sm">
+          <p className="min-w-0 flex-1">
+            {confirming === "build"
+              ? "Build (or rebuild) the Top 10 from the current scores? Any existing shortlist is replaced."
+              : "Publish these results? Rank 1 is announced as the winner and the finalists appear on the public leaderboard. This cannot be undone."}
+          </p>
+          <div className="flex gap-2">
+            <button className="btn-secondary" onClick={() => setConfirming(null)}>Cancel</button>
+            <button
+              className="btn-primary"
+              onClick={() => {
+                const which = confirming;
+                setConfirming(null);
+                if (which === "build") run(() => supabase.rpc("admin_build_shortlist", { p_challenge_id: challenge.id, p_size: 10 }), "Shortlist built.");
+                else run(() => supabase.rpc("admin_publish_winners", { p_challenge_id: challenge.id }), "Winners published.");
+              }}
+            >
+              {confirming === "build" ? "Build shortlist" : "Publish"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {msg && <p role="status" className={`rounded-lg px-3 py-2 text-sm ${msg.ok ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-800"}`}>{msg.text}</p>}
       {published && <p className="rounded-lg bg-brand-soft px-3 py-2 text-sm text-brand-dark">Winners are published for this challenge.</p>}
@@ -103,6 +135,7 @@ export function ShortlistTab({ challenge, onChallengeChanged }: { challenge: Cha
             <li key={r.id} className="card flex flex-wrap items-center gap-4 !p-4">
               <span className="grid h-10 w-10 place-items-center rounded-full bg-brand-soft text-lg font-bold text-brand-dark">{r.rank}</span>
               <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold uppercase tracking-wide text-accent">{r.rank === 1 ? "Winner" : "Finalist"}</p>
                 <p className="truncate font-semibold">{r.submissions?.title}</p>
                 <p className="font-mono text-xs text-ink/50">{r.submissions?.reference_id}</p>
               </div>
