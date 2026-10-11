@@ -13,7 +13,7 @@ from typing import Protocol
 from google import genai
 from google.genai import errors as genai_errors
 from google.genai import types
-from tenacity import before_sleep_log, retry, stop_after_attempt, wait_exponential_jitter
+from tenacity import before_sleep_log, retry, retry_if_exception, stop_after_attempt, wait_exponential_jitter
 
 from .config import Settings
 from .prompts import SYSTEM_INSTRUCTION, extraction_prompt, scoring_prompt
@@ -22,7 +22,16 @@ from .schemas import Part, ScoreResult, StructuredProfile
 log = logging.getLogger("worker.llm")
 
 # Retry transient failures (rate limits, 5xx, timeouts) with exponential backoff and jitter.
+def _is_transient(exc: BaseException) -> bool:
+    """A per-day quota error will not clear in seconds, so retrying it only wastes time."""
+    text = str(exc)
+    if "PerDay" in text or "per day" in text.lower():
+        return False
+    return True
+
+
 _retry = retry(
+    retry=retry_if_exception(_is_transient),
     stop=stop_after_attempt(4),
     wait=wait_exponential_jitter(initial=2, max=30),
     before_sleep=before_sleep_log(log, logging.WARNING),
