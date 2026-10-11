@@ -12,6 +12,8 @@ export interface Ev {
   disagreement: number;
   needs_review: boolean;
   injection_flagged: boolean;
+  injection_cleared_by?: string | null;
+  injection_cleared_reason?: string | null;
   reasoning: string;
   override_score: number | null;
   override_reason: string | null;
@@ -64,6 +66,20 @@ export function EvalDetail({
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const [clearReason, setClearReason] = useState("");
+  async function clearFlag(e: FormEvent) {
+    e.preventDefault();
+    if (!ev) return;
+    setBusy(true);
+    setMsg(null);
+    const { error } = await supabase.rpc("staff_clear_injection_flag", { p_evaluation_id: ev.id, p_reason: clearReason });
+    setBusy(false);
+    if (error) return setMsg({ ok: false, text: error.message });
+    setMsg({ ok: true, text: "Flag cleared and written to the audit log." });
+    setClearReason("");
+    onChanged();
+  }
+
   async function override(e: FormEvent) {
     e.preventDefault();
     if (!ev) return;
@@ -114,7 +130,8 @@ export function EvalDetail({
             <span className="badge bg-white text-ink/70">Model {ev.model_name}</span>
             <span className="badge bg-white text-ink/70">Rubric v{ev.rubric_version}</span>
             <span className="badge bg-white text-ink/70">Prompt {ev.prompt_version}</span>
-            {ev.injection_flagged && <span className="badge bg-red-100 text-red-800">Prompt-injection suspected</span>}
+            {ev.injection_flagged && !ev.injection_cleared_by && <span className="badge bg-red-100 text-red-800">Prompt-injection suspected</span>}
+            {ev.injection_flagged && ev.injection_cleared_by && <span className="badge bg-accent-soft text-accent">Flag reviewed and cleared</span>}
             {ev.needs_review && <span className="badge bg-purple-100 text-purple-800">Needs human review</span>}
             {ev.override_score !== null && <span className="badge bg-accent-soft text-accent">Human override</span>}
           </div>
@@ -143,6 +160,24 @@ export function EvalDetail({
             <p className="rounded-lg bg-red-50 px-3 py-2 text-red-800">
               <strong>Suspicious text:</strong> {p.injection_notes}
             </p>
+          )}
+
+          {ev.injection_flagged && !ev.injection_cleared_by && ev.override_score === null && (
+            <form onSubmit={clearFlag} className="rounded-lg border border-line bg-white p-3 space-y-2">
+              <p className="font-medium">Read the original text above. If the flagged sentence is harmless, clear the flag so this idea can enter the Top 10.</p>
+              <input
+                value={clearReason}
+                onChange={(e) => setClearReason(e.target.value)}
+                placeholder="Reason, for example: reviewed, normal wording about assumptions"
+                className="w-full rounded-lg border border-line px-3 py-2"
+                required
+                minLength={10}
+              />
+              <button disabled={busy} className="btn-primary">Clear flag</button>
+            </form>
+          )}
+          {ev.injection_cleared_reason && (
+            <p className="rounded-lg bg-accent-soft px-3 py-2"><strong>Flag cleared:</strong> {ev.injection_cleared_reason}</p>
           )}
 
           <div>

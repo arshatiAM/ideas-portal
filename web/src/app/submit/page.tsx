@@ -1,5 +1,6 @@
 "use client";
 
+import { wakeWorker } from "@/lib/wakeWorker";
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -126,6 +127,7 @@ function SubmitForm() {
       const { data: ref, error: finErr } = await supabase.rpc("finalize_submission", { p_submission_id: sid });
       if (finErr) throw finErr;
       setReference(ref as string);
+      wakeWorker();
     } catch (err) {
       const msg = err instanceof Error ? err.message : (err as { message?: string })?.message;
       setError(`${msg ?? "Something went wrong."} You can press Submit again to retry; nothing is lost.`);

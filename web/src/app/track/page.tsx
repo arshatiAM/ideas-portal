@@ -1,5 +1,6 @@
 "use client";
 
+import { wakeWorker } from "@/lib/wakeWorker";
 import { Suspense, useCallback, useEffect, useState, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -51,6 +52,7 @@ function TrackInner() {
       return;
     }
     setData(sub as unknown as Tracked);
+    if (["queued", "processing"].includes((sub as { status: string }).status)) wakeWorker();
     setState("idle");
     // Scores are only visible to the owner after the challenge results are published (enforced by RLS).
     const { data: ev } = await supabase
