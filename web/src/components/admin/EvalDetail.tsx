@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { supabase } from "@/lib/supabase";
+import { SubmissionContent } from "./SubmissionContent";
 
 export interface Ev {
   id: string;
@@ -98,6 +99,7 @@ export function EvalDetail({
 
   return (
     <div className="space-y-5 bg-sand/60 p-5 text-sm">
+      <SubmissionContent submissionId={submissionId} />
       {job?.last_error && (
         <p className="rounded-lg bg-red-50 px-3 py-2 text-red-800">
           Job {job.status}, attempt {job.attempts}: {job.last_error}

@@ -24,7 +24,8 @@ class Settings(BaseSettings):
     score_runs: int = 2                 # independent scoring passes, averaged
     disagreement_threshold: float = 15  # total-score gap (0-100) that triggers human review
     max_file_mb: int = 50
-    poll_interval_seconds: float = 5.0
+    poll_interval_seconds: float = 2.0
+    worker_concurrency: int = 3        # parallel job loops; safe because claim_job uses SKIP LOCKED
     run_loop: bool = True               # set false to run only the API (e.g. in tests)
 
     # Protects /stats. Leave empty to disable the endpoint.

@@ -30,15 +30,17 @@ async def lifespan(app: FastAPI):
     pipeline = Pipeline(db, build_gateway(cfg), cfg)
     stop = threading.Event()
     state.update(db=db, stop=stop, cfg=cfg)
-    thread = None
+    threads = []
     if cfg.run_loop:
-        thread = threading.Thread(target=run_loop, args=(db, pipeline, stop, cfg.poll_interval_seconds),
-                                  name="worker-loop", daemon=True)
-        thread.start()
+        for i in range(max(1, cfg.worker_concurrency)):
+            t = threading.Thread(target=run_loop, args=(db, pipeline, stop, cfg.poll_interval_seconds),
+                                 name=f"worker-loop-{i}", daemon=True)
+            t.start()
+            threads.append(t)
     yield
     stop.set()
-    if thread:
-        thread.join(timeout=10)
+    for t in threads:
+        t.join(timeout=10)
 
 
 app = FastAPI(title="Ideas Portal worker", lifespan=lifespan)
