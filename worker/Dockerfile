@@ -14,4 +14,5 @@ RUN useradd -m appuser
 USER appuser
 
 EXPOSE 7860
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7860"]
+# Hosts such as Render/Cloud Run inject $PORT; Hugging Face uses 7860
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-7860}"]
