@@ -19,10 +19,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body>
         <Providers>
-          <Nav />
-          <ConfigNotice />
-          <main className="mx-auto min-h-[70vh] w-full max-w-6xl px-4 py-8 sm:px-6">{children}</main>
-          <Footer />
+          <div className="flex min-h-screen flex-col">
+            <Nav />
+            <ConfigNotice />
+            <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">{children}</main>
+            <Footer />
+          </div>
         </Providers>
       </body>
     </html>
